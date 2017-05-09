@@ -21,7 +21,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>com.apoletics.AlgoTrade</mainClass>
+							<mainClass>com.apoletics.AlgoTradeV2</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
