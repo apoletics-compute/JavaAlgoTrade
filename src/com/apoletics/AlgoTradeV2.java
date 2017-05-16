@@ -38,10 +38,14 @@ import eu.verdelhan.ta4j.trading.rules.UnderIndicatorRule;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -97,7 +101,9 @@ public class AlgoTradeV2 {
 //        MACDIndicator macd = new MACDIndicator(closePrice, 9, 26);
 //        EMAIndicator emaMacd = new EMAIndicator(macd, 18);
 //        MyRSIIndicator rsi14 = new MyRSIIndicator(closePrice, 14);
-        MyRSIIndicator rsi14 = new MyRSIIndicator(closePrice, 14);
+        MyAverageGainIndicator ag = new MyAverageGainIndicator(closePrice, 14);
+        MyAverageLossIndicator al = new MyAverageLossIndicator(closePrice, 14);
+        MyRSIIndicator rsi14 = new MyRSIIndicator(closePrice,ag,al,14);
         
         
         // Entry rule
@@ -141,23 +147,9 @@ public class AlgoTradeV2 {
         return randomDecimal;
     }
 
-    /**
-     * Generates a random tick.
-     * @return a random tick
-     */
-    private static Tick generateRandomTick() {
-        final Decimal maxRange = Decimal.valueOf("0.03"); // 3.0%
-        Decimal openPrice = LAST_TICK_CLOSE_PRICE;
-        Decimal minPrice = openPrice.minus(openPrice.multipliedBy(maxRange.multipliedBy(Decimal.valueOf(Math.random()))));
-        Decimal maxPrice = openPrice.plus(openPrice.multipliedBy(maxRange.multipliedBy(Decimal.valueOf(Math.random()))));
-        Decimal closePrice = randDecimal(minPrice, maxPrice);
-        LAST_TICK_CLOSE_PRICE = closePrice;
-        return new Tick(DateTime.now(), openPrice, maxPrice, minPrice, closePrice, Decimal.ONE);
-    }
-
     public static void main(String[] args) throws InterruptedException {
 
-        //System.out.println("********************** Initialization **********************");
+        //System.err.println("********************** Initialization **********************");
         // Getting the time series
         //TimeSeries series = initMovingTimeSeries(20);
         //TimeSeries series = new TimeSeries();
@@ -167,70 +159,85 @@ public class AlgoTradeV2 {
         // Initializing the trading history
         TradingRecord tradingRecord = new TradingRecord();
         String filename= args[0];
-        int rsi1 = Integer.parseInt(args[1]);
-        int rsi2 = Integer.parseInt(args[2]);
+        int rsi1 = 30; //Integer.parseInt(args[1]);
+        int rsi2 = 70; //Integer.parseInt(args[2]);
         TimeSeries series = CsvTicksLoader.loadAppleIncSeries(filename);
 //        TimeSeries allSeries = CsvTicksLoader.loadAppleIncSeries(filename);
 //        TimeSeries series = allSeries.subseries(20, allSeries.getEnd());
         Strategy strategy =  buildStrategy(series,rsi1,rsi2);        
 //        TimeSeries ts = series.subseries(series.getTickCount()-300, series.getTickCount()-1);
 //        ts.
-//        	System.out.println("peroid date: START: "+ts.getTick(ts.getBegin()).getDateName());
-//        	System.out.println("peroid date: END: "+ts.getTick(ts.getEnd()).getDateName());
-//        	System.out.println("ts max:: "+(new eu.verdelhan.ta4j.indicators.simple.MaxPriceIndicator(ts)).getValue(ts.getEnd()-1));
-//        	System.out.println("ts min : "+(new eu.verdelhan.ta4j.indicators.simple.MinPriceIndicator(ts)).getValue(ts.getEnd()-1));
-//        	System.out.println("");
+//        	System.err.println("peroid date: START: "+ts.getTick(ts.getBegin()).getDateName());
+//        	System.err.println("peroid date: END: "+ts.getTick(ts.getEnd()).getDateName());
+//        	System.err.println("ts max:: "+(new eu.verdelhan.ta4j.indicators.simple.MaxPriceIndicator(ts)).getValue(ts.getEnd()-1));
+//        	System.err.println("ts min : "+(new eu.verdelhan.ta4j.indicators.simple.MinPriceIndicator(ts)).getValue(ts.getEnd()-1));
+//        	System.err.println("");
 //        
 //        if (ts.getTickCount() > 0) return;
         tradingRecord= series.run(strategy);
         tradingRecord= series.run(strategy, OrderType.BUY, Decimal.valueOf(1000));
         
         TotalProfitCriterion totalProfit = new TotalProfitCriterion();
-        System.out.println("Total profit: " + totalProfit.calculate(series, tradingRecord));
+        System.err.println("Total profit: " + totalProfit.calculate(series, tradingRecord));
         // Number of ticks
-        System.out.println("Number of ticks: " + new NumberOfTicksCriterion().calculate(series, tradingRecord));
+        System.err.println("Number of ticks: " + new NumberOfTicksCriterion().calculate(series, tradingRecord));
         // Average profit (per tick)
-        System.out.println("Average profit (per tick): " + new AverageProfitCriterion().calculate(series, tradingRecord));
+        System.err.println("Average profit (per tick): " + new AverageProfitCriterion().calculate(series, tradingRecord));
         // Number of trades
-        System.out.println("Number of trades: " + new NumberOfTradesCriterion().calculate(series, tradingRecord));
+        System.err.println("Number of trades: " + new NumberOfTradesCriterion().calculate(series, tradingRecord));
         // Profitable trades ratio
-        System.out.println("Profitable trades ratio: " + new AverageProfitableTradesCriterion().calculate(series, tradingRecord));
+        System.err.println("Profitable trades ratio: " + new AverageProfitableTradesCriterion().calculate(series, tradingRecord));
         // Maximum drawdown
-        System.out.println("Maximum drawdown: " + new MaximumDrawdownCriterion().calculate(series, tradingRecord));
+        System.err.println("Maximum drawdown: " + new MaximumDrawdownCriterion().calculate(series, tradingRecord));
         // Reward-risk ratio
-        System.out.println("Reward-risk ratio: " + new RewardRiskRatioCriterion().calculate(series, tradingRecord));
+        System.err.println("Reward-risk ratio: " + new RewardRiskRatioCriterion().calculate(series, tradingRecord));
         // Total transaction cost
-        System.out.println("Total transaction cost (from $1000): " + new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord));
+        System.err.println("Total transaction cost (from $1000): " + new LinearTransactionCostCriterion(1000, 0.005).calculate(series, tradingRecord));
         // Buy-and-hold
-        System.out.println("Buy-and-hold: " + new BuyAndHoldCriterion().calculate(series, tradingRecord));
+        System.err.println("Buy-and-hold: " + new BuyAndHoldCriterion().calculate(series, tradingRecord));
         // Total profit vs buy-and-hold
-        System.out.println("Custom strategy profit vs buy-and-hold strategy profit: " + new VersusBuyAndHoldCriterion(totalProfit).calculate(series, tradingRecord));
-        System.out.println("Trades:"+tradingRecord.getTrades());  
+        System.err.println("Custom strategy profit vs buy-and-hold strategy profit: " + new VersusBuyAndHoldCriterion(totalProfit).calculate(series, tradingRecord));
+        System.err.println("Trades:"+tradingRecord.getTrades());  
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-        MyRSIIndicator rsi14 = new MyRSIIndicator(closePrice, 14);
+        MyAverageGainIndicator ag = new MyAverageGainIndicator(closePrice, 14);
+        MyAverageLossIndicator al = new MyAverageLossIndicator(closePrice, 14);
+        MyRSIIndicator rsi14 = new MyRSIIndicator(closePrice,ag,al,14);                
         
         for (Trade iTrade : tradingRecord.getTrades()) {
-        	System.out.println("Entry Type: ");
-        	System.out.println("Date: "+series.getTick(iTrade.getEntry().getIndex()).getDateName());
-        	System.out.println("price: "+iTrade.getEntry().getPrice().toDouble());
-        	System.out.println("Entry RSI: "+rsi14.getValue(iTrade.getEntry().getIndex())); 
-        	System.out.println("Exit Type:");
-        	System.out.println("Date: "+series.getTick(iTrade.getExit().getIndex()).getDateName());
-        	System.out.println("price: "+iTrade.getExit().getPrice().toDouble());
-        	System.out.println("Exit RSI: "+rsi14.getValue(iTrade.getExit().getIndex())); 
+        	System.err.println("Entry Type: ");
+        	System.err.println("Date: "+series.getTick(iTrade.getEntry().getIndex()).getDateName());
+        	System.err.println("price: "+iTrade.getEntry().getPrice().toDouble());
+        	System.err.println("Entry RSI: "+rsi14.getValue(iTrade.getEntry().getIndex())); 
+        	System.err.println("Exit Type:");
+        	System.err.println("Date: "+series.getTick(iTrade.getExit().getIndex()).getDateName());
+        	System.err.println("price: "+iTrade.getExit().getPrice().toDouble());
+        	System.err.println("Exit RSI: "+rsi14.getValue(iTrade.getExit().getIndex())); 
         }
-    	System.out.println("Last order: "+tradingRecord.getLastOrder().getType()+" price: "+tradingRecord.getLastOrder().getPrice() +" at: "+series.getTick(tradingRecord.getLastOrder().getIndex()).getDateName());
-    	System.out.println("Last RSI: "+rsi14.getValue(series.getEnd()));
-        System.out.println("Should Enter?"+strategy.shouldEnter(series.getEnd()));
-        System.out.println("Should Exit?"+strategy.shouldExit(series.getEnd()));
-        
-        System.out.println("args.length: "+args.length);
-        if (args.length >4) {
+        int lastIndex = series.getEnd();
+    	System.err.println("Last order: "+tradingRecord.getLastOrder().getType()+" price: "+tradingRecord.getLastOrder().getPrice() +" at: "+series.getTick(tradingRecord.getLastOrder().getIndex()).getDateName());
+    	System.err.println("Last RSI: "+rsi14.getValue(lastIndex));
+    	double predictedPrice70=(al.getValue(lastIndex).toDouble()*91- ag.getValue(lastIndex).toDouble()*39)/3 +closePrice.getValue(lastIndex).toDouble();
+    	double predictedPrice30=closePrice.getValue(lastIndex).toDouble()- ( ag.getValue(lastIndex).toDouble()*91 - al.getValue(lastIndex).toDouble()*39 )/3;
+    	System.err.println("Predict Price for RSI > 70: "+(rsi14.getValue(lastIndex).toDouble()>70?"NA":predictedPrice70));
+    	System.err.println("Predict Price for RSI < 30: "+(rsi14.getValue(lastIndex).toDouble()<30?"NA":predictedPrice30));
+    	System.err.println("last Close Price for RSI < 30: "+closePrice.getValue(lastIndex).toDouble());
+        System.err.println("Should Enter?"+strategy.shouldEnter(lastIndex));
+        System.err.println("Should Exit?"+strategy.shouldExit(lastIndex));
+        StringBuilder sb = new StringBuilder();
+        Formatter formatter = new Formatter(sb, Locale.US);
+              
+        Path p = Paths.get(filename);
+        System.err.println("name:" +p.getFileName());
+        String thisFilename = p.getFileName().toString();
+        System.err.println("args.length: "+args.length);
+        System.out.format("%s,%.2f,%.2f, %.2f, %.2f \n",thisFilename.substring(0,thisFilename.lastIndexOf(".")),closePrice.getValue(lastIndex).toDouble(),
+        		rsi14.getValue(lastIndex).toDouble(),(rsi14.getValue(lastIndex).toDouble()<30?Double.NaN:predictedPrice30),(rsi14.getValue(lastIndex).toDouble()>70?Double.NaN:predictedPrice70) );
+        if (args.length >1) {
 	        int ncount = rsi14.getTimeSeries().getEnd();
-	        System.out.println("Ncount:"+ncount);
+	        System.err.println("Ncount:"+ncount);
 	        Decimal rsiToday = rsi14.getValue(ncount);
-	        System.out.println("START AT:"+rsi14.getTimeSeries().getTick(0).getDateName() );
-	        System.out.println("RSI: at "+rsi14.getTimeSeries().getTick(rsi14.getTimeSeries().getEnd()).getDateName()+"is: "+rsiToday);
+	        System.err.println("START AT:"+rsi14.getTimeSeries().getTick(0).getDateName() );
+	        System.err.println("RSI: at "+rsi14.getTimeSeries().getTick(rsi14.getTimeSeries().getEnd()).getDateName()+"is: "+rsiToday);
 	        
 	        
 	        TimeSeriesCollection dataset = new TimeSeriesCollection();

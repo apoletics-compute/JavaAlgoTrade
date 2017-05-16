@@ -10,16 +10,16 @@ public class MyRSIIndicator extends CachedIndicator<Decimal> {
 
 	private final int timeFrame;
 	private final Indicator<Decimal> indicator;
-    private MyAverageGainIndicator averageGainIndicator;
+    private Indicator<Decimal> averageGainIndicator;
 
-    private MyAverageLossIndicator averageLossIndicator;
+    private Indicator<Decimal> averageLossIndicator;
     
-    public MyRSIIndicator(Indicator<Decimal> indicator, int timeFrame) {
+    public MyRSIIndicator(Indicator<Decimal> indicator,Indicator<Decimal> averageGainIndicator, Indicator<Decimal> averageLossIndicator, int timeFrame) {
         super(indicator);
         this.indicator = indicator;
         this.timeFrame = timeFrame;
-        averageGainIndicator = new MyAverageGainIndicator(indicator, timeFrame);
-        averageLossIndicator = new MyAverageLossIndicator(indicator, timeFrame);
+        this.averageGainIndicator = averageGainIndicator;
+        this.averageLossIndicator = averageLossIndicator;
     }
 
 	@Override

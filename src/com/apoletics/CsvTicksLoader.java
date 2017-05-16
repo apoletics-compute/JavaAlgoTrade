@@ -54,7 +54,7 @@ public class CsvTicksLoader {
                 double close = Double.parseDouble(line[4]);
                 double volume = Double.parseDouble(line[5]);
                 double adjClose = Double.parseDouble(line[6]);
-                ticks.add(new Tick(date, open, high, low, adjClose, volume));
+                ticks.add(new Tick(date, open, high, low, close, volume));
             }
         } catch (IOException ioe) {
             Logger.getLogger(CsvTicksLoader.class.getName()).log(Level.SEVERE, "Unable to load ticks from CSV", ioe);
