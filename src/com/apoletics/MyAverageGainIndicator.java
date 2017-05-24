@@ -23,6 +23,9 @@ package com.apoletics;
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import eu.verdelhan.ta4j.Indicator;
+
+import java.util.HashMap;
+
 import eu.verdelhan.ta4j.Decimal;
 import eu.verdelhan.ta4j.indicators.CachedIndicator;
 import eu.verdelhan.ta4j.indicators.helpers.CumulatedGainsIndicator;
@@ -38,7 +41,9 @@ public class MyAverageGainIndicator extends CachedIndicator<Decimal> {
     private final int timeFrame;
     
     private final Indicator<Decimal> indicator;
-
+    
+//    private final HashMap<Integer,Decimal> cachedMap = new HashMap<Integer,Decimal>();
+    
     public MyAverageGainIndicator(Indicator<Decimal> indicator, int timeFrame) {
         super(indicator);
         this.cumulatedGains = new CumulatedGainsIndicator(indicator, timeFrame);
@@ -48,9 +53,13 @@ public class MyAverageGainIndicator extends CachedIndicator<Decimal> {
 
     @Override
     protected Decimal calculate(int index) {
+//    	System.out.println("index:"+index);
         Decimal sumOfGains = Decimal.ZERO;
         Decimal averageGain = Decimal.ZERO;
         Decimal thisGain = Decimal.ZERO;
+//        if (cachedMap.get(index) != null) {
+//        	return cachedMap.get(index);
+//        }
         if (index <= timeFrame ) {
 	        for (int i = 1; i <= index; i++) {        	
 	            if (indicator.getValue(i).isGreaterThan(indicator.getValue(i - 1))) {
@@ -64,6 +73,7 @@ public class MyAverageGainIndicator extends CachedIndicator<Decimal> {
         	}
         	averageGain = this.getValue(index -1).multipliedBy(Decimal.valueOf(timeFrame-1)).plus(thisGain).dividedBy(Decimal.valueOf(timeFrame));
         }
+//        cachedMap.put(index,averageGain);
         return averageGain;
     }
 }

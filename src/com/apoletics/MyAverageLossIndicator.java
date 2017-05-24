@@ -23,6 +23,9 @@ package com.apoletics;
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import eu.verdelhan.ta4j.Indicator;
+
+import java.util.HashMap;
+
 import eu.verdelhan.ta4j.Decimal;
 import eu.verdelhan.ta4j.indicators.CachedIndicator;
 import eu.verdelhan.ta4j.indicators.helpers.CumulatedGainsIndicator;
@@ -39,6 +42,8 @@ public class MyAverageLossIndicator extends CachedIndicator<Decimal> {
     
     private final Indicator<Decimal> indicator;
 
+//    private final HashMap<Integer,Decimal> cachedMap = new HashMap<Integer,Decimal>();
+    
     public MyAverageLossIndicator(Indicator<Decimal> indicator, int timeFrame) {
         super(indicator);
         this.cumulatedGains = new CumulatedGainsIndicator(indicator, timeFrame);
@@ -52,6 +57,9 @@ public class MyAverageLossIndicator extends CachedIndicator<Decimal> {
         Decimal sumOfLoss = Decimal.ZERO;
         Decimal averageLoss = Decimal.ZERO;
         Decimal thisLoss = Decimal.ZERO;
+//        if (cachedMap.get(index) != null) {
+//        	return cachedMap.get(index);
+//        }
         if (index <= timeFrame ) {
 	        for (int i = 1; i <= index; i++) {        	
 	            if (indicator.getValue(i-1).isGreaterThan(indicator.getValue(i ))) {
@@ -65,6 +73,7 @@ public class MyAverageLossIndicator extends CachedIndicator<Decimal> {
         	}
         	averageLoss = this.getValue(index -1).multipliedBy(Decimal.valueOf(timeFrame-1)).plus(thisLoss).dividedBy(Decimal.valueOf(timeFrame));
         }
+//        cachedMap.put(index,averageLoss);
         return averageLoss;
     }
 }

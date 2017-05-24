@@ -103,6 +103,10 @@ public class AlgoTradeV2 {
 //        MyRSIIndicator rsi14 = new MyRSIIndicator(closePrice, 14);
         MyAverageGainIndicator ag = new MyAverageGainIndicator(closePrice, 14);
         MyAverageLossIndicator al = new MyAverageLossIndicator(closePrice, 14);
+        for (int i=0; i<closePrice.getTimeSeries().getEnd(); i++){
+        	ag.getValue(i);
+        	al.getValue(i);
+        }
         MyRSIIndicator rsi14 = new MyRSIIndicator(closePrice,ag,al,14);
         
         
@@ -144,7 +148,7 @@ public class AlgoTradeV2 {
         if (min != null && max != null && min.isLessThan(max)) {
             randomDecimal = max.minus(min).multipliedBy(Decimal.valueOf(Math.random())).plus(min);
         }
-        return randomDecimal;
+        return randomDecimal;        
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -201,6 +205,10 @@ public class AlgoTradeV2 {
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         MyAverageGainIndicator ag = new MyAverageGainIndicator(closePrice, 14);
         MyAverageLossIndicator al = new MyAverageLossIndicator(closePrice, 14);
+        for (int i=0; i<closePrice.getTimeSeries().getEnd(); i++){
+        	ag.getValue(i);
+        	al.getValue(i);
+        }        
         MyRSIIndicator rsi14 = new MyRSIIndicator(closePrice,ag,al,14);                
         
         for (Trade iTrade : tradingRecord.getTrades()) {
@@ -214,6 +222,7 @@ public class AlgoTradeV2 {
         	System.err.println("Exit RSI: "+rsi14.getValue(iTrade.getExit().getIndex())); 
         }
         int lastIndex = series.getEnd();
+       
     	System.err.println("Last order: "+tradingRecord.getLastOrder().getType()+" price: "+tradingRecord.getLastOrder().getPrice() +" at: "+series.getTick(tradingRecord.getLastOrder().getIndex()).getDateName());
     	System.err.println("Last RSI: "+rsi14.getValue(lastIndex));
     	double predictedPrice70=(al.getValue(lastIndex).toDouble()*91- ag.getValue(lastIndex).toDouble()*39)/3 +closePrice.getValue(lastIndex).toDouble();
@@ -225,12 +234,13 @@ public class AlgoTradeV2 {
         System.err.println("Should Exit?"+strategy.shouldExit(lastIndex));
         StringBuilder sb = new StringBuilder();
         Formatter formatter = new Formatter(sb, Locale.US);
+
               
         Path p = Paths.get(filename);
         System.err.println("name:" +p.getFileName());
         String thisFilename = p.getFileName().toString();
         System.err.println("args.length: "+args.length);
-        System.out.format("%s,%.2f,%.2f, %.2f, %.2f \n",thisFilename.substring(0,thisFilename.lastIndexOf(".")),closePrice.getValue(lastIndex).toDouble(),
+        System.out.format("%s - %s :, %.2f, %.2f, %.2f, %.2f \n",series.getTick(lastIndex).getDateName(), thisFilename.substring(0,thisFilename.lastIndexOf(".")),closePrice.getValue(lastIndex).toDouble(),
         		rsi14.getValue(lastIndex).toDouble(),(rsi14.getValue(lastIndex).toDouble()<30?Double.NaN:predictedPrice30),(rsi14.getValue(lastIndex).toDouble()>70?Double.NaN:predictedPrice70) );
         if (args.length >1) {
 	        int ncount = rsi14.getTimeSeries().getEnd();
